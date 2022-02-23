@@ -21,9 +21,12 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.FileSystemNotFoundException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
@@ -32,6 +35,56 @@ import java.util.regex.Pattern;
 public class MangaConverter {
     public static double SKIP_START_VIDEO_MS = 12000;
     public static double MANGA_PAGE_INTERVAL_MS = 10000;
+
+    public static void GenerateHTML(File imageDir) throws IOException {
+        /*
+        * <h1 style="text-align: center;">name</h1>
+        * <div style="width: 100%;">
+        * <img style="display: block;" src="<image-path>" alt="" />
+        * </div>
+        * */
+        if(!imageDir.exists())
+            return;
+
+        String folderName = imageDir.getName();
+
+        StringBuilder sb = new StringBuilder();
+
+        sb.append("<body style=\" background:black; width: 100%; height: 100%;\">").append("\n");
+        sb.append("<div style=\"position:relative; width: 100%; height: 100%; color: white;\">").append("\n");
+        sb.append("<h1 style=\"text-align: center;\">").append(folderName).append("</h1>").append("\n");
+
+
+
+        File[] imageList = imageDir.listFiles((dir, name) -> name.endsWith(".jpg"));
+        List<String> images = new ArrayList<>();
+        for(File img : imageList) {
+            images.add(img.getName());
+        }
+
+        images.sort((o1, o2) -> {
+            int i1 = Integer.parseInt(o1.replaceAll(".jpg", ""));
+            int i2 = Integer.parseInt(o2.replaceAll(".jpg", ""));
+
+            return Integer.compare(i1, i2);
+        });
+
+
+        for(String img : images) {
+            //<img style="display: block;" src="<image-path>" alt="" />
+            sb.append("<img style=\"display: block; margin-left: auto; margin-right: auto;\" src=\"").append(img).append("\"/>").append("\n");
+        }
+
+        sb.append("</div>");
+        sb.append("</body>");
+
+
+        File html = new File(imageDir,folderName + ".html");
+        FileOutputStream outputStream = new FileOutputStream(html);
+        outputStream.write(sb.toString().getBytes());
+        outputStream.flush();
+        outputStream.close();
+    }
 
     public static void ExtractFromYoutubeByInterval(String URL,
                                                     File vidOutputDir,
@@ -81,7 +134,9 @@ public class MangaConverter {
                     @Override
                     public void onFinished(File data) {
                         try {
-                            ExtractPhotosByInterval(data, vidInfo.get() != null ? new File(imageOutputDir, vidInfo.get().details().title()) : imageOutputDir, startSkipMs, intervalMs);
+                            File imgOut = vidInfo.get() != null ? new File(imageOutputDir, vidInfo.get().details().title()) : imageOutputDir;
+                            ExtractPhotosByInterval(data, imgOut, startSkipMs, intervalMs);
+                            GenerateHTML(imgOut);
 
                             if (fileCallback != null)
                                 fileCallback.onFinished(data);

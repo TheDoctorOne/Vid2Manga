@@ -15,6 +15,8 @@ public class Main {
     static{ System.loadLibrary(Core.NATIVE_LIBRARY_NAME); }
 
     public static void main(String[] args) throws IOException, UnsupportedFlavorException {
+
+        MangaConverter.GenerateHTML(new File("C:\\Users\\DoctorOne\\Desktop\\Video2MangaConverter\\testImage\\Strongest Cultivation System Chapter 65 English"));
         String s = (String) Toolkit.getDefaultToolkit()
                 .getSystemClipboard().getData(DataFlavor.stringFlavor);
 

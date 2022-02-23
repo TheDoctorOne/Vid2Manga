@@ -2,13 +2,24 @@ plugins {
     id 'java'
 }
 
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'net.mahmutkocas.v2m_conv.Main'
+        )
+    }
+}
+
 group 'net.mahmutkocas'
 version '1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
+    implementation files('C:/opencv/build/java/opencv-455.jar')
+    implementation 'com.github.sealedtx:java-youtube-downloader:3.0.2'
 }

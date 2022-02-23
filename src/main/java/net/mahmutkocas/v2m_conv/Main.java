@@ -21,7 +21,9 @@ public class Main {
         Mat mat = new Mat(10,10, CvType.CV_32FC1);
         System.out.println("Mat Size : " + mat.rows() + ", " + mat.cols());
 
-        MangaConverter.YoutubeHandler.FetchYoutube("https://www.youtube.com/watch?v=MlumIBfdt70", new File("test"), null,
+        MangaConverter.ExtractFromYoutubeByInterval(args[0],
+                new File("test"),
+                new File("testImage"), null,
                 new YoutubeProgressCallback<File>() {
                     @Override
                     public void onDownloading(int progress) {

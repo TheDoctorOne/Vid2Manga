@@ -5,23 +5,24 @@ import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
+import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.File;
+import java.io.IOException;
 
 public class Main {
     static{ System.loadLibrary(Core.NATIVE_LIBRARY_NAME); }
 
-//    public static void printHelp() {
-//        System.out.println("Usage:\n" +
-//                "\t<video-id> <output-dir>");
-//    }
+    public static void main(String[] args) throws IOException, UnsupportedFlavorException {
+        String s = (String) Toolkit.getDefaultToolkit()
+                .getSystemClipboard().getData(DataFlavor.stringFlavor);
 
-    public static void main(String[] args) {
+        if(s.trim().equals(""))
+            return;
 
-
-        Mat mat = new Mat(10,10, CvType.CV_32FC1);
-        System.out.println("Mat Size : " + mat.rows() + ", " + mat.cols());
-
-        MangaConverter.ExtractFromYoutubeByInterval(args[0],
+        System.out.println("URL: " + s);
+        MangaConverter.ExtractFromYoutubeByInterval(s,
                 new File("test"),
                 new File("testImage"), null,
                 new YoutubeProgressCallback<File>() {

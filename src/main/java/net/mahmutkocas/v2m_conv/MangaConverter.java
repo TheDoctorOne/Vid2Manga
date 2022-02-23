@@ -10,9 +10,8 @@ import com.github.kiulian.downloader.model.videos.VideoInfo;
 import com.github.kiulian.downloader.model.videos.formats.Format;
 import com.github.kiulian.downloader.model.videos.formats.VideoFormat;
 import com.github.kiulian.downloader.model.videos.quality.VideoQuality;
-import org.omg.CORBA.TRANSACTION_MODE;
 import org.opencv.core.Mat;
-import org.opencv.video.Video;
+import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.videoio.VideoCapture;
 import org.opencv.videoio.Videoio;
 
@@ -25,8 +24,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.FileSystemNotFoundException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
@@ -134,9 +131,16 @@ public class MangaConverter {
                     @Override
                     public void onFinished(File data) {
                         try {
+                            System.out.println("Download Finished. " + data.getAbsolutePath());
                             File imgOut = vidInfo.get() != null ? new File(imageOutputDir, vidInfo.get().details().title()) : imageOutputDir;
+                            String absPath = imgOut.getAbsolutePath();
+                            int c = 1;
+                            while (imgOut.isDirectory())
+                                imgOut = new File(absPath + " (" + (c++) + ")");
                             ExtractPhotosByInterval(data, imgOut, startSkipMs, intervalMs);
+                            System.out.println("Photos extracted. " + imgOut.getAbsolutePath());
                             GenerateHTML(imgOut);
+                            System.out.println("HTML Generated.");
 
                             if (fileCallback != null)
                                 fileCallback.onFinished(data);
@@ -194,7 +198,7 @@ public class MangaConverter {
                 }
 
                 if(intervalCount % intervalFrameCount == 0) {
-                    writeToMatToFile(frame, new File(outDir,imageCount + ".jpg"));
+                    writeMatToFile(frame, new File(outDir,imageCount + ".jpg"));
                     imageCount++;
                 }
 
@@ -212,11 +216,12 @@ public class MangaConverter {
         }
     }
 
-    private static boolean writeToMatToFile(Mat m, File out) throws IOException {
+    private static boolean writeMatToFile(Mat m, File out) throws IOException {
         if(!out.isFile())
             if(!out.createNewFile())
                 throw new FileNotFoundException("Can not create the file. " + out.getAbsolutePath());
-        return ImageIO.write(Mat2BufferedImage(m),"jpg", out);
+        return Imgcodecs.imwrite(out.getAbsolutePath(), m);
+//        return ImageIO.write(Mat2BufferedImage(m),"jpg", out);
     }
 
     public static BufferedImage Mat2BufferedImage(Mat m) {

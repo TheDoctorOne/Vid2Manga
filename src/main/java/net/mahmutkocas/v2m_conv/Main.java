@@ -16,8 +16,6 @@ public class Main {
     static{ System.loadLibrary(Core.NATIVE_LIBRARY_NAME); }
 
     public static void main(String[] args) throws IOException, UnsupportedFlavorException, MalformedLinkException {
-
-        MangaConverter.GenerateHTML(new File("C:\\Users\\DoctorOne\\Desktop\\Video2MangaConverter\\testImage\\Strongest Cultivation System Chapter 65 English"));
         String s = (String) Toolkit.getDefaultToolkit()
                 .getSystemClipboard().getData(DataFlavor.stringFlavor);
 
@@ -27,7 +25,12 @@ public class Main {
         System.out.println("URL: " + s);
 
         if(s.contains("list"))
-            MangaConverter.ExtractFromYoutubeListByInterval(s, 65, YoutubeHandler.ListDownloadOrder.ABOVE);
+            MangaConverter.ExtractFromYoutubeListByInterval(
+                    s
+                    , 65
+                    , YoutubeHandler.ListDownloadOrder.ABOVE
+                    , new File("Converted")
+            );
         else
             MangaConverter.ExtractFromYoutubeByInterval(s);
     }

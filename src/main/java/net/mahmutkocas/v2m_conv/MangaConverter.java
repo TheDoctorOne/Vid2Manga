@@ -13,7 +13,6 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.FileSystemNotFoundException;
 import java.util.ArrayList;
@@ -25,75 +24,28 @@ public class MangaConverter {
     public static double MANGA_PAGE_INTERVAL_MS = 10000;
 
 
-    public static void GenerateHTML(File imageDir) throws IOException {
-        /*
-        * <h1 style="text-align: center;">name</h1>
-        * <div style="width: 100%;">
-        * <img style="display: block;" src="<image-path>" alt="" />
-        * </div>
-        * */
-        if(!imageDir.exists())
-            return;
-
-        String folderName = imageDir.getName();
-
-        StringBuilder sb = new StringBuilder();
-
-        sb.append("<body style=\" background:black; width: 100%; height: 100%;\">").append("\n");
-        sb.append("<div style=\"position:relative; width: 100%; height: 100%; color: white;\">").append("\n");
-        sb.append("<h1 style=\"text-align: center;\">").append(folderName).append("</h1>").append("\n");
-
-
-
-        File[] imageList = imageDir.listFiles((dir, name) -> name.endsWith(".jpg"));
-        List<String> images = new ArrayList<>();
-        for(File img : imageList) {
-            images.add(img.getName());
-        }
-
-        images.sort((o1, o2) -> {
-            int i1 = Integer.parseInt(o1.replaceAll(".jpg", ""));
-            int i2 = Integer.parseInt(o2.replaceAll(".jpg", ""));
-
-            return Integer.compare(i1, i2);
-        });
-
-
-        for(String img : images) {
-            //<img style="display: block;" src="<image-path>" alt="" />
-            sb.append("<img style=\"display: block; margin-left: auto; margin-right: auto;\" src=\"").append(img).append("\"/>").append("\n");
-        }
-
-        sb.append("</div>");
-        sb.append("</body>");
-
-
-        File html = new File(imageDir,folderName + ".html");
-        FileOutputStream outputStream = new FileOutputStream(html);
-        outputStream.write(sb.toString().getBytes());
-        outputStream.flush();
-        outputStream.close();
-    }
-
     public static void ExtractFromYoutubeByInterval(String URL) {
-        ExtractFromYoutubeByInterval(URL, null, null);
+        ExtractFromYoutubeByInterval(URL, null, null, null);
     }
     public static void ExtractFromYoutubeByInterval(String URL,
                                                     YoutubeCallback<VideoInfo> infoCallback,
-                                                    YoutubeProgressCallback<File> fileCallback) {
+                                                    YoutubeProgressCallback<File> fileCallback,
+                                                    HTMLGenerator.HTMLCallback onHTMLGenerateComplete) {
         ExtractFromYoutubeByInterval(
                 URL,
                 new File(new File("").getAbsolutePath()),
                 new File(new File("").getAbsolutePath()),
                 infoCallback,
-                fileCallback);
+                fileCallback,
+                onHTMLGenerateComplete);
 
     }
     public static void ExtractFromYoutubeByInterval(String URL,
                                                     File vidOutputDir,
                                                     File imageOutputDir,
                                                     YoutubeCallback<VideoInfo> infoCallback,
-                                                    YoutubeProgressCallback<File> fileCallback) {
+                                                    YoutubeProgressCallback<File> fileCallback,
+                                                    HTMLGenerator.HTMLCallback onHTMLGenerateComplete) {
 
         ExtractFromYoutubeByInterval(URL,
                 vidOutputDir,
@@ -101,7 +53,8 @@ public class MangaConverter {
                 SKIP_START_VIDEO_MS,
                 MANGA_PAGE_INTERVAL_MS,
                 infoCallback,
-                fileCallback);
+                fileCallback,
+                onHTMLGenerateComplete);
     }
 
     public static void ExtractFromYoutubeListByInterval(String URL) throws MalformedLinkException {
@@ -119,7 +72,42 @@ public class MangaConverter {
     public static void ExtractFromYoutubeListByInterval(String URL,
                                                         int index,
                                                         YoutubeHandler.ListDownloadOrder order) throws MalformedLinkException {
-        ExtractFromYoutubeListByInterval(URL, index, order, null, null, null);
+        ExtractFromYoutubeListByInterval(URL, index, order, null, null, null, null);
+    }
+
+    public static void ExtractFromYoutubeListByInterval(String URL,
+                                                        int index,
+                                                        YoutubeHandler.ListDownloadOrder order,
+                                                        File imageOutputDir) throws MalformedLinkException {
+        ExtractFromYoutubeListByInterval(
+                URL,
+                index,
+                order,
+                new File(new File("").getAbsolutePath()),
+                null,
+                imageOutputDir,
+                null,
+                null,
+                null
+        );
+    }
+
+    public static void ExtractFromYoutubeListByInterval(String URL,
+                                                        int index,
+                                                        YoutubeHandler.ListDownloadOrder order,
+                                                        File vidOutputDir,
+                                                        File imageOutputDir) throws MalformedLinkException {
+        ExtractFromYoutubeListByInterval(
+                URL,
+                index,
+                order,
+                vidOutputDir,
+                null,
+                imageOutputDir,
+                null,
+                null,
+                null
+        );
     }
 
     public static void ExtractFromYoutubeListByInterval(String URL,
@@ -127,7 +115,8 @@ public class MangaConverter {
                                                         YoutubeHandler.ListDownloadOrder order,
                                                         YoutubeHandler.PlayListCallback playListCallback,
                                                         YoutubeCallback<VideoInfo> infoCallback,
-                                                        YoutubeProgressCallback<File> fileCallback) throws MalformedLinkException {
+                                                        YoutubeProgressCallback<File> fileCallback,
+                                                        HTMLGenerator.HTMLCallback onHTMLGenerateComplete) throws MalformedLinkException {
         ExtractFromYoutubeListByInterval(
                 URL,
                 index,
@@ -136,7 +125,8 @@ public class MangaConverter {
                 playListCallback,
                 new File(new File("").getAbsolutePath()),
                 infoCallback,
-                fileCallback
+                fileCallback,
+                onHTMLGenerateComplete
         );
     }
 
@@ -147,7 +137,8 @@ public class MangaConverter {
                                                         YoutubeHandler.PlayListCallback playListCallback,
                                                         File imageOutputDir,
                                                         YoutubeCallback<VideoInfo> infoCallback,
-                                                        YoutubeProgressCallback<File> fileCallback) throws MalformedLinkException {
+                                                        YoutubeProgressCallback<File> fileCallback,
+                                                        HTMLGenerator.HTMLCallback onHTMLGenerateComplete) throws MalformedLinkException {
         ExtractFromYoutubeListByInterval(
                 URL,
                 index,
@@ -158,25 +149,29 @@ public class MangaConverter {
                 SKIP_START_VIDEO_MS,
                 MANGA_PAGE_INTERVAL_MS,
                 infoCallback,
-                fileCallback
+                fileCallback,
+                onHTMLGenerateComplete
         );
     }
 
     public static void ExtractFromYoutubeListByInterval(String URL,
-                                                    int index,
-                                                    YoutubeHandler.ListDownloadOrder order,
-                                                    File vidOutputDir,
-                                                    YoutubeHandler.PlayListCallback playListCallback,
-                                                    File imageOutputDir,
-                                                    double startSkipMs,
-                                                    double intervalMs,
-                                                    YoutubeCallback<VideoInfo> infoCallback,
-                                                    YoutubeProgressCallback<File> fileCallback) throws MalformedLinkException {
+                                                        int index,
+                                                        YoutubeHandler.ListDownloadOrder order,
+                                                        File vidOutputDir,
+                                                        YoutubeHandler.PlayListCallback playListCallback,
+                                                        File imageOutputDir,
+                                                        double startSkipMs,
+                                                        double intervalMs,
+                                                        YoutubeCallback<VideoInfo> infoCallback,
+                                                        YoutubeProgressCallback<File> fileCallback,
+                                                        HTMLGenerator.HTMLCallback onHTMLGenerateComplete
+                                                    ) throws MalformedLinkException {
+
         DownloadCallback callback = DownloadCallback.createDefaultCallback(
                 imageOutputDir,
                 startSkipMs,
                 intervalMs,
-                infoCallback, fileCallback);
+                infoCallback, fileCallback, onHTMLGenerateComplete);
 
         YoutubeHandler.FetchYoutubeListFromIndex(URL,
                 index,
@@ -194,8 +189,9 @@ public class MangaConverter {
                                                     double startSkipMs,
                                                     double intervalMs,
                                                     YoutubeCallback<VideoInfo> infoCallback,
-                                                    YoutubeProgressCallback<File> fileCallback) {
-        DownloadCallback callback = DownloadCallback.createDefaultCallback(imageOutputDir, startSkipMs, intervalMs, infoCallback, fileCallback);
+                                                    YoutubeProgressCallback<File> fileCallback,
+                                                    HTMLGenerator.HTMLCallback onHTMLGenerateComplete) {
+        DownloadCallback callback = DownloadCallback.createDefaultCallback(imageOutputDir, startSkipMs, intervalMs, infoCallback, fileCallback, onHTMLGenerateComplete);
         YoutubeHandler.FetchYoutubeURL(URL, vidOutputDir, callback.info, callback.downloadCallback);
     }
 
@@ -304,21 +300,48 @@ public class MangaConverter {
                 double startSkipMs,
                 double intervalMs,
                 YoutubeCallback<VideoInfo> infoCallback,
-                YoutubeProgressCallback<File> fileCallback) {
-            return new DownloadCallback(imageOutputDir, startSkipMs, intervalMs, infoCallback, fileCallback);
+                YoutubeProgressCallback<File> fileCallback,
+                HTMLGenerator.HTMLCallback onHTMLGenerateComplete) {
+            return new DownloadCallback(imageOutputDir, startSkipMs, intervalMs, infoCallback, fileCallback, onHTMLGenerateComplete);
         }
 
-        AtomicReference<VideoInfo> vidInfo = new AtomicReference<>();
+        public AtomicReference<VideoInfo> vidInfo = new AtomicReference<>();
+        public List<File> generatedHTMLs = new ArrayList<>();
+
         public final YoutubeCallback<VideoInfo> info;
         public final YoutubeProgressCallback<File> downloadCallback;
+        public final HTMLGenerator.HTMLCallback htmlCallback;
+
 
         private DownloadCallback(
                 File imageOutputDir,
                 double startSkipMs,
                 double intervalMs,
                 YoutubeCallback<VideoInfo> infoCallback,
-                YoutubeProgressCallback<File> fileCallback
-        ) {
+                YoutubeProgressCallback<File> fileCallback,
+                HTMLGenerator.HTMLCallback onHTMLGenerateComplete) {
+
+            htmlCallback = new HTMLGenerator.HTMLCallback() {
+                File prev = null;
+                @Override
+                public void generationComplete(File html) {
+                    generatedHTMLs.add(html);
+
+                    if(prev != null) {
+                        try {
+                            HTMLGenerator.AppendButtons(html, prev);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+
+                    if(onHTMLGenerateComplete != null)
+                        onHTMLGenerateComplete.generationComplete(html);
+
+                    prev = html;
+                }
+            };
+
             info = new YoutubeCallback<VideoInfo>() {
                 @Override
                 public void onFinished(VideoInfo data) {
@@ -352,7 +375,7 @@ public class MangaConverter {
                             imgOut = new File(absPath + " (" + (c++) + ")");
                         ExtractPhotosByInterval(data, imgOut, startSkipMs, intervalMs);
                         System.out.println("Photos extracted. " + imgOut.getAbsolutePath());
-                        GenerateHTML(imgOut);
+                        HTMLGenerator.GenerateHTML(imgOut, DownloadCallback.this.htmlCallback);
                         System.out.println("HTML Generated.");
 
                         if (fileCallback != null)

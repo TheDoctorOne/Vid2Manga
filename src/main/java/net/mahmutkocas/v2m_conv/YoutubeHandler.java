@@ -17,6 +17,7 @@ import javax.naming.MalformedLinkException;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.MalformedParametersException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -89,8 +90,13 @@ public class YoutubeHandler {
             throw new MalformedLinkException("Playlist Info is not valid! " + URL);
         }
 
+        List<String> downloadedIds = new ArrayList<>(); //Avoid same video inside the playlist.
         info.videos().forEach(playlistVideoDetails -> {
             boolean shouldDownload = false;
+
+            if(downloadedIds.contains(playlistVideoDetails.videoId()))
+                return;
+
             switch (order) {
                 case ABOVE:
                     if (playlistVideoDetails.index() > index) {
@@ -117,6 +123,8 @@ public class YoutubeHandler {
                         playListCallback.failedIndex(playlistVideoDetails.index());
                     }
                 }
+
+                downloadedIds.add(playlistVideoDetails.videoId()); //Avoid same video inside the playlist.
             }
         });
 

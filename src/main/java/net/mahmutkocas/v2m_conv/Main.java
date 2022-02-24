@@ -26,6 +26,9 @@ public class Main {
 
         System.out.println("URL: " + s);
 
-        MangaConverter.ExtractFromYoutubeListByInterval(s, 65, YoutubeHandler.ListDownloadOrder.ABOVE);
+        if(s.contains("list"))
+            MangaConverter.ExtractFromYoutubeListByInterval(s, 65, YoutubeHandler.ListDownloadOrder.ABOVE);
+        else
+            MangaConverter.ExtractFromYoutubeByInterval(s);
     }
 }

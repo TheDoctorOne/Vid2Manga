@@ -1,21 +1,14 @@
 package net.mahmutkocas.v2m_conv;
 
-import com.github.kiulian.downloader.YoutubeDownloader;
 import com.github.kiulian.downloader.downloader.YoutubeCallback;
 import com.github.kiulian.downloader.downloader.YoutubeProgressCallback;
-import com.github.kiulian.downloader.downloader.request.RequestVideoFileDownload;
-import com.github.kiulian.downloader.downloader.request.RequestVideoInfo;
-import com.github.kiulian.downloader.model.Extension;
 import com.github.kiulian.downloader.model.videos.VideoInfo;
-import com.github.kiulian.downloader.model.videos.formats.Format;
-import com.github.kiulian.downloader.model.videos.formats.VideoFormat;
-import com.github.kiulian.downloader.model.videos.quality.VideoQuality;
 import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.videoio.VideoCapture;
 import org.opencv.videoio.Videoio;
 
-import javax.imageio.ImageIO;
+import javax.naming.MalformedLinkException;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferByte;
 import java.io.File;
@@ -26,12 +19,11 @@ import java.nio.file.FileSystemNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class MangaConverter {
     public static double SKIP_START_VIDEO_MS = 12000;
     public static double MANGA_PAGE_INTERVAL_MS = 10000;
+
 
     public static void GenerateHTML(File imageDir) throws IOException {
         /*
@@ -83,6 +75,20 @@ public class MangaConverter {
         outputStream.close();
     }
 
+    public static void ExtractFromYoutubeByInterval(String URL) {
+        ExtractFromYoutubeByInterval(URL, null, null);
+    }
+    public static void ExtractFromYoutubeByInterval(String URL,
+                                                    YoutubeCallback<VideoInfo> infoCallback,
+                                                    YoutubeProgressCallback<File> fileCallback) {
+        ExtractFromYoutubeByInterval(
+                URL,
+                new File(new File("").getAbsolutePath()),
+                new File(new File("").getAbsolutePath()),
+                infoCallback,
+                fileCallback);
+
+    }
     public static void ExtractFromYoutubeByInterval(String URL,
                                                     File vidOutputDir,
                                                     File imageOutputDir,
@@ -97,6 +103,91 @@ public class MangaConverter {
                 infoCallback,
                 fileCallback);
     }
+
+    public static void ExtractFromYoutubeListByInterval(String URL) throws MalformedLinkException {
+        ExtractFromYoutubeListByInterval(URL, 0);
+    }
+
+    /**
+     * Downloads after the index. Not including the index.
+     * */
+    public static void ExtractFromYoutubeListByInterval(String URL,
+                                                        int index) throws MalformedLinkException {
+        ExtractFromYoutubeListByInterval(URL, index, YoutubeHandler.ListDownloadOrder.ABOVE);
+    }
+
+    public static void ExtractFromYoutubeListByInterval(String URL,
+                                                        int index,
+                                                        YoutubeHandler.ListDownloadOrder order) throws MalformedLinkException {
+        ExtractFromYoutubeListByInterval(URL, index, order, null, null, null);
+    }
+
+    public static void ExtractFromYoutubeListByInterval(String URL,
+                                                        int index,
+                                                        YoutubeHandler.ListDownloadOrder order,
+                                                        YoutubeHandler.PlayListCallback playListCallback,
+                                                        YoutubeCallback<VideoInfo> infoCallback,
+                                                        YoutubeProgressCallback<File> fileCallback) throws MalformedLinkException {
+        ExtractFromYoutubeListByInterval(
+                URL,
+                index,
+                order,
+                new File(new File("").getAbsolutePath()),
+                playListCallback,
+                new File(new File("").getAbsolutePath()),
+                infoCallback,
+                fileCallback
+        );
+    }
+
+    public static void ExtractFromYoutubeListByInterval(String URL,
+                                                        int index,
+                                                        YoutubeHandler.ListDownloadOrder order,
+                                                        File vidOutputDir,
+                                                        YoutubeHandler.PlayListCallback playListCallback,
+                                                        File imageOutputDir,
+                                                        YoutubeCallback<VideoInfo> infoCallback,
+                                                        YoutubeProgressCallback<File> fileCallback) throws MalformedLinkException {
+        ExtractFromYoutubeListByInterval(
+                URL,
+                index,
+                order,
+                vidOutputDir,
+                playListCallback,
+                imageOutputDir,
+                SKIP_START_VIDEO_MS,
+                MANGA_PAGE_INTERVAL_MS,
+                infoCallback,
+                fileCallback
+        );
+    }
+
+    public static void ExtractFromYoutubeListByInterval(String URL,
+                                                    int index,
+                                                    YoutubeHandler.ListDownloadOrder order,
+                                                    File vidOutputDir,
+                                                    YoutubeHandler.PlayListCallback playListCallback,
+                                                    File imageOutputDir,
+                                                    double startSkipMs,
+                                                    double intervalMs,
+                                                    YoutubeCallback<VideoInfo> infoCallback,
+                                                    YoutubeProgressCallback<File> fileCallback) throws MalformedLinkException {
+        DownloadCallback callback = DownloadCallback.createDefaultCallback(
+                imageOutputDir,
+                startSkipMs,
+                intervalMs,
+                infoCallback, fileCallback);
+
+        YoutubeHandler.FetchYoutubeListFromIndex(URL,
+                index,
+                order,
+                vidOutputDir,
+                playListCallback,
+                callback.info,
+                callback.downloadCallback
+        );
+    }
+
     public static void ExtractFromYoutubeByInterval(String URL,
                                                     File vidOutputDir,
                                                     File imageOutputDir,
@@ -104,58 +195,11 @@ public class MangaConverter {
                                                     double intervalMs,
                                                     YoutubeCallback<VideoInfo> infoCallback,
                                                     YoutubeProgressCallback<File> fileCallback) {
-        AtomicReference<VideoInfo> vidInfo = new AtomicReference<>();
-        YoutubeHandler.FetchYoutube(URL, vidOutputDir,
-                new YoutubeCallback<VideoInfo>() {
-                    @Override
-                    public void onFinished(VideoInfo data) {
-                        vidInfo.set(data);
-                        if(infoCallback != null)
-                            infoCallback.onFinished(data);
-                    }
-
-                    @Override
-                    public void onError(Throwable throwable) {
-                        if(infoCallback != null)
-                            infoCallback.onError(throwable);
-                    }
-                }
-                ,
-                new YoutubeProgressCallback<File>() {
-                    @Override
-                    public void onDownloading(int progress) {
-                        if (fileCallback != null)
-                            fileCallback.onDownloading(progress);
-                    }
-
-                    @Override
-                    public void onFinished(File data) {
-                        try {
-                            System.out.println("Download Finished. " + data.getAbsolutePath());
-                            File imgOut = vidInfo.get() != null ? new File(imageOutputDir, vidInfo.get().details().title()) : imageOutputDir;
-                            String absPath = imgOut.getAbsolutePath();
-                            int c = 1;
-                            while (imgOut.isDirectory())
-                                imgOut = new File(absPath + " (" + (c++) + ")");
-                            ExtractPhotosByInterval(data, imgOut, startSkipMs, intervalMs);
-                            System.out.println("Photos extracted. " + imgOut.getAbsolutePath());
-                            GenerateHTML(imgOut);
-                            System.out.println("HTML Generated.");
-
-                            if (fileCallback != null)
-                                fileCallback.onFinished(data);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-
-                    @Override
-                    public void onError(Throwable throwable) {
-                        if (fileCallback != null)
-                            fileCallback.onError(throwable);
-                    }
-                });
+        DownloadCallback callback = DownloadCallback.createDefaultCallback(imageOutputDir, startSkipMs, intervalMs, infoCallback, fileCallback);
+        YoutubeHandler.FetchYoutubeURL(URL, vidOutputDir, callback.info, callback.downloadCallback);
     }
+
+
 
     public static void ExtractPhotosByInterval(File inputVid, File outDir) throws IOException {
         ExtractPhotosByInterval(inputVid, outDir, SKIP_START_VIDEO_MS, MANGA_PAGE_INTERVAL_MS);
@@ -249,5 +293,81 @@ public class MangaConverter {
         final byte[] targetPixels = ((DataBufferByte) image.getRaster().getDataBuffer()).getData();
         System.arraycopy(b, 0, targetPixels, 0, b.length);
         return image;
+    }
+
+
+
+    public static class DownloadCallback {
+
+        public static DownloadCallback createDefaultCallback(
+                File imageOutputDir,
+                double startSkipMs,
+                double intervalMs,
+                YoutubeCallback<VideoInfo> infoCallback,
+                YoutubeProgressCallback<File> fileCallback) {
+            return new DownloadCallback(imageOutputDir, startSkipMs, intervalMs, infoCallback, fileCallback);
+        }
+
+        AtomicReference<VideoInfo> vidInfo = new AtomicReference<>();
+        public final YoutubeCallback<VideoInfo> info;
+        public final YoutubeProgressCallback<File> downloadCallback;
+
+        private DownloadCallback(
+                File imageOutputDir,
+                double startSkipMs,
+                double intervalMs,
+                YoutubeCallback<VideoInfo> infoCallback,
+                YoutubeProgressCallback<File> fileCallback
+        ) {
+            info = new YoutubeCallback<VideoInfo>() {
+                @Override
+                public void onFinished(VideoInfo data) {
+                    vidInfo.set(data);
+                    if (infoCallback != null)
+                        infoCallback.onFinished(data);
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    if (infoCallback != null)
+                        infoCallback.onError(throwable);
+                }
+            };
+
+            downloadCallback = new YoutubeProgressCallback<File>() {
+                @Override
+                public void onDownloading(int progress) {
+                    if (fileCallback != null)
+                        fileCallback.onDownloading(progress);
+                }
+
+                @Override
+                public void onFinished(File data) {
+                    try {
+                        System.out.println("Download Finished. " + data.getAbsolutePath());
+                        File imgOut = vidInfo.get() != null ? new File(imageOutputDir, vidInfo.get().details().title()) : imageOutputDir;
+                        String absPath = imgOut.getAbsolutePath();
+                        int c = 1;
+                        while (imgOut.isDirectory())
+                            imgOut = new File(absPath + " (" + (c++) + ")");
+                        ExtractPhotosByInterval(data, imgOut, startSkipMs, intervalMs);
+                        System.out.println("Photos extracted. " + imgOut.getAbsolutePath());
+                        GenerateHTML(imgOut);
+                        System.out.println("HTML Generated.");
+
+                        if (fileCallback != null)
+                            fileCallback.onFinished(data);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                @Override
+                public void onError(Throwable throwable) {
+                    if (fileCallback != null)
+                        fileCallback.onError(throwable);
+                }
+            };
+        }
     }
 }
